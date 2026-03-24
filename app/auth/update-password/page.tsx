@@ -5,27 +5,37 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
-export default function LoginPage() {
+export default function UpdatePasswordPage() {
   const router = useRouter()
-  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [errore, setErrore] = useState('')
+  const [conferma, setConferma] = useState('')
   const [loading, setLoading] = useState(false)
+  const [errore, setErrore] = useState('')
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (password !== conferma) {
+      setErrore('Le password non coincidono.')
+      return
+    }
+    if (password.length < 8) {
+      setErrore('La password deve essere di almeno 8 caratteri.')
+      return
+    }
+
     setLoading(true)
     setErrore('')
 
     const supabase = createClient()
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { error } = await supabase.auth.updateUser({ password })
 
     if (error) {
-      setErrore('Email o password errati. Riprova.')
+      setErrore('Errore nell\'aggiornamento. Il link potrebbe essere scaduto.')
       setLoading(false)
       return
     }
 
+    // Ottieni il profilo per redirect corretto
     const { data: { user } } = await supabase.auth.getUser()
     if (user) {
       const { data: profile } = await supabase
@@ -36,12 +46,14 @@ export default function LoginPage() {
 
       if (profile?.role === 'candidato') {
         router.push('/candidato/dashboard')
-      } else if (profile?.role === 'azienda') {
+        return
+      }
+      if (profile?.role === 'azienda') {
         router.push('/azienda/dashboard')
-      } else {
-        router.push('/')
+        return
       }
     }
+    router.push('/login')
   }
 
   return (
@@ -55,8 +67,8 @@ export default function LoginPage() {
       <main className="flex-1 flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-sm">
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8">
-            <h1 className="text-2xl font-bold text-slate-800 mb-2">Accedi</h1>
-            <p className="text-slate-500 text-sm mb-6">Bentornato su LavorAssieme</p>
+            <h1 className="text-2xl font-bold text-slate-800 mb-2">Nuova password</h1>
+            <p className="text-slate-500 text-sm mb-6">Scegli una nuova password per il tuo account.</p>
 
             {errore && (
               <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3 mb-4">
@@ -66,47 +78,37 @@ export default function LoginPage() {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="tu@esempio.it"
-                />
-              </div>
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block text-sm font-medium text-slate-700">Password</label>
-                  <Link href="/reset-password" className="text-xs text-blue-600 hover:underline">
-                    Hai dimenticato la password?
-                  </Link>
-                </div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Nuova password</label>
                 <input
                   type="password"
                   required
+                  minLength={8}
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="••••••••"
+                  placeholder="Minimo 8 caratteri"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Conferma password</label>
+                <input
+                  type="password"
+                  required
+                  minLength={8}
+                  value={conferma}
+                  onChange={e => setConferma(e.target.value)}
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Ripeti la password"
                 />
               </div>
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-blue-600 text-white font-semibold py-2.5 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full bg-blue-600 text-white font-semibold py-2.5 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-60"
               >
-                {loading ? 'Accesso in corso...' : 'Accedi'}
+                {loading ? 'Aggiornamento...' : 'Aggiorna password'}
               </button>
             </form>
-
-            <p className="text-center text-sm text-slate-500 mt-6">
-              Non hai un account?{' '}
-              <Link href="/registrati" className="text-blue-600 font-medium hover:underline">
-                Registrati
-              </Link>
-            </p>
           </div>
         </div>
       </main>

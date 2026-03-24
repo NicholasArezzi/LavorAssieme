@@ -15,6 +15,7 @@ function RegistratiForm() {
   const [ruolo, setRuolo] = useState<'candidato' | 'azienda'>(ruoloParam || 'candidato')
   const [loading, setLoading] = useState(false)
   const [errore, setErrore] = useState('')
+  const [info, setInfo] = useState('')
 
   // Campi comuni
   const [email, setEmail] = useState('')
@@ -42,10 +43,15 @@ function RegistratiForm() {
 
     const supabase = createClient()
 
-    // 1. Crea account
+    // 1. Crea account (con metadata per gestire email confirmation)
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        data: ruolo === 'candidato'
+          ? { role: ruolo, nome, cognome, telefono, citta, ruolo_cercato: ruoloCercato }
+          : { role: ruolo, nome_azienda: nomeAzienda, settore, citta: cittaAzienda },
+      },
     })
 
     if (authError || !authData.user) {
@@ -57,7 +63,7 @@ function RegistratiForm() {
     // Se Supabase richiede conferma email, non esiste sessione attiva
     if (!authData.session) {
       setLoading(false)
-      setErrore('Controlla la tua email e clicca il link di conferma per completare la registrazione.')
+      setInfo('Controlla la tua email e clicca il link di conferma per completare la registrazione.')
       return
     }
 
@@ -170,6 +176,11 @@ function RegistratiForm() {
 
         <h1 className="text-2xl font-bold text-slate-800 mb-6">Crea il tuo account</h1>
 
+        {info && (
+          <div className="bg-blue-50 border border-blue-200 text-blue-700 text-sm rounded-lg px-4 py-3 mb-4">
+            📧 {info}
+          </div>
+        )}
         {errore && (
           <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3 mb-4">
             {errore}
