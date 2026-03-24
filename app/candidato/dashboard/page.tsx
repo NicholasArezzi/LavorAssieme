@@ -13,6 +13,10 @@ interface Candidato {
   citta: string
   ruolo_cercato: string
   cv_url: string | null
+  avatar_url: string | null
+  bio: string | null
+  linkedin: string | null
+  anni_esperienza: number | null
 }
 
 export default function CandidatoDashboard() {
@@ -22,7 +26,8 @@ export default function CandidatoDashboard() {
   const [userId, setUserId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [uploading, setUploading] = useState(false)
+  const [uploadingCv, setUploadingCv] = useState(false)
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
   const [messaggio, setMessaggio] = useState('')
   const [errore, setErrore] = useState('')
   const [refreshKey, setRefreshKey] = useState(0)
@@ -33,6 +38,9 @@ export default function CandidatoDashboard() {
   const [telefono, setTelefono] = useState('')
   const [citta, setCitta] = useState('')
   const [ruoloCercato, setRuoloCercato] = useState('')
+  const [bio, setBio] = useState('')
+  const [linkedin, setLinkedin] = useState('')
+  const [anniEsperienza, setAnniEsperienza] = useState<string>('')
 
   useEffect(() => {
     let cancelled = false
@@ -57,6 +65,9 @@ export default function CandidatoDashboard() {
         setTelefono(data.telefono || '')
         setCitta(data.citta || '')
         setRuoloCercato(data.ruolo_cercato || '')
+        setBio(data.bio || '')
+        setLinkedin(data.linkedin || '')
+        setAnniEsperienza(data.anni_esperienza != null ? String(data.anni_esperienza) : '')
       }
       setLoading(false)
     }
@@ -73,7 +84,16 @@ export default function CandidatoDashboard() {
 
     const { error } = await supabase
       .from('candidati')
-      .update({ nome, cognome, telefono, citta, ruolo_cercato: ruoloCercato })
+      .update({
+        nome,
+        cognome,
+        telefono,
+        citta,
+        ruolo_cercato: ruoloCercato,
+        bio: bio || null,
+        linkedin: linkedin || null,
+        anni_esperienza: anniEsperienza !== '' ? parseInt(anniEsperienza) : null,
+      })
       .eq('user_id', userId!)
 
     if (error) {
@@ -83,6 +103,55 @@ export default function CandidatoDashboard() {
       setRefreshKey(k => k + 1)
     }
     setSaving(false)
+  }
+
+  async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file || !userId) return
+
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp']
+    if (!allowedTypes.includes(file.type)) {
+      setErrore('Carica un\'immagine JPG, PNG o WebP.')
+      return
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setErrore('L\'immagine è troppo grande. Max 2MB.')
+      return
+    }
+
+    setUploadingAvatar(true)
+    setErrore('')
+    setMessaggio('')
+    const supabase = createClient()
+
+    const filePath = `avatar/${userId}/avatar.jpg`
+
+    const { error: uploadError } = await supabase.storage
+      .from('avatars')
+      .upload(filePath, file, { upsert: true, contentType: file.type })
+
+    if (uploadError) {
+      setErrore('Errore nel caricamento della foto.')
+      setUploadingAvatar(false)
+      return
+    }
+
+    const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(filePath)
+    // Aggiunge timestamp per evitare cache del browser
+    const avatarUrl = `${urlData.publicUrl}?v=${Date.now()}`
+
+    const { error: updateError } = await supabase
+      .from('candidati')
+      .update({ avatar_url: avatarUrl })
+      .eq('user_id', userId)
+
+    if (updateError) {
+      setErrore('Foto caricata ma errore nel salvataggio.')
+    } else {
+      setMessaggio('Foto del profilo aggiornata!')
+      setRefreshKey(k => k + 1)
+    }
+    setUploadingAvatar(false)
   }
 
   async function handleCvUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -98,7 +167,7 @@ export default function CandidatoDashboard() {
       return
     }
 
-    setUploading(true)
+    setUploadingCv(true)
     setErrore('')
     setMessaggio('')
     const supabase = createClient()
@@ -111,7 +180,7 @@ export default function CandidatoDashboard() {
 
     if (uploadError) {
       setErrore('Errore nel caricamento del CV.')
-      setUploading(false)
+      setUploadingCv(false)
       return
     }
 
@@ -129,7 +198,7 @@ export default function CandidatoDashboard() {
       setMessaggio('CV caricato con successo!')
       setRefreshKey(k => k + 1)
     }
-    setUploading(false)
+    setUploadingCv(false)
   }
 
   async function handleLogout() {
@@ -145,6 +214,8 @@ export default function CandidatoDashboard() {
       </div>
     )
   }
+
+  const iniziali = `${nome?.[0] || ''}${cognome?.[0] || ''}`.toUpperCase()
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -189,6 +260,45 @@ export default function CandidatoDashboard() {
         )}
 
         <div className="grid gap-6">
+          {/* Foto profilo */}
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+            <h2 className="text-lg font-semibold text-slate-800 mb-4">Foto profilo</h2>
+            <div className="flex items-center gap-5">
+              <div className="relative shrink-0">
+                {candidato?.avatar_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={candidato.avatar_url}
+                    alt="Foto profilo"
+                    className="w-20 h-20 rounded-full object-cover border-2 border-slate-200"
+                  />
+                ) : (
+                  <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center text-2xl font-bold text-blue-600">
+                    {iniziali || '?'}
+                  </div>
+                )}
+                {uploadingAvatar && (
+                  <div className="absolute inset-0 bg-white/70 rounded-full flex items-center justify-center">
+                    <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                  </div>
+                )}
+              </div>
+              <div>
+                <label className="cursor-pointer inline-flex items-center gap-2 bg-white border border-slate-300 text-slate-700 text-sm font-medium px-4 py-2 rounded-lg hover:bg-slate-50 transition-colors">
+                  {uploadingAvatar ? 'Caricamento...' : 'Cambia foto'}
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={handleAvatarUpload}
+                    className="hidden"
+                    disabled={uploadingAvatar}
+                  />
+                </label>
+                <p className="text-xs text-slate-400 mt-1.5">JPG, PNG o WebP · Max 2MB</p>
+              </div>
+            </div>
+          </div>
+
           {/* Form dati personali */}
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
             <h2 className="text-lg font-semibold text-slate-800 mb-4">Dati personali</h2>
@@ -216,12 +326,23 @@ export default function CandidatoDashboard() {
                   className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Città</label>
-                <input
-                  type="text" value={citta} onChange={e => setCitta(e.target.value)}
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Città</label>
+                  <input
+                    type="text" value={citta} onChange={e => setCitta(e.target.value)}
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Anni di esperienza</label>
+                  <input
+                    type="number" min="0" max="50" value={anniEsperienza}
+                    onChange={e => setAnniEsperienza(e.target.value)}
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="es. 3"
+                  />
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Ruolo cercato</label>
@@ -229,6 +350,29 @@ export default function CandidatoDashboard() {
                   type="text" value={ruoloCercato} onChange={e => setRuoloCercato(e.target.value)}
                   className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="es. Sviluppatore Web"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Presentazione
+                  <span className="font-normal text-slate-400 ml-1">— descriviti alle aziende</span>
+                </label>
+                <textarea
+                  value={bio}
+                  onChange={e => setBio(e.target.value)}
+                  rows={4}
+                  maxLength={500}
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                  placeholder="Racconta chi sei, le tue competenze e cosa cerchi..."
+                />
+                <p className="text-xs text-slate-400 mt-1 text-right">{bio.length}/500</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Profilo LinkedIn</label>
+                <input
+                  type="url" value={linkedin} onChange={e => setLinkedin(e.target.value)}
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="https://linkedin.com/in/tuoprofilo"
                 />
               </div>
               <button
@@ -266,13 +410,13 @@ export default function CandidatoDashboard() {
               <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center hover:border-blue-400 hover:bg-blue-50 transition-all">
                 <p className="text-2xl mb-2">📁</p>
                 <p className="text-sm font-medium text-slate-700">
-                  {uploading ? 'Caricamento in corso...' : 'Clicca per caricare il CV'}
+                  {uploadingCv ? 'Caricamento in corso...' : 'Clicca per caricare il CV'}
                 </p>
                 <p className="text-xs text-slate-500 mt-1">Solo PDF, max 5MB</p>
               </div>
               <input
                 type="file" accept=".pdf" onChange={handleCvUpload}
-                className="hidden" disabled={uploading}
+                className="hidden" disabled={uploadingCv}
               />
             </label>
           </div>

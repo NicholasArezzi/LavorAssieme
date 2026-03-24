@@ -42,10 +42,15 @@ function RegistratiForm() {
 
     const supabase = createClient()
 
-    // 1. Crea account
+    // 1. Crea account (con metadata per gestire email confirmation)
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        data: ruolo === 'candidato'
+          ? { role: ruolo, nome, cognome, telefono, citta, ruolo_cercato: ruoloCercato }
+          : { role: ruolo, nome_azienda: nomeAzienda, settore, citta: cittaAzienda },
+      },
     })
 
     if (authError || !authData.user) {

@@ -13,6 +13,8 @@ interface Candidato {
   ruolo_cercato: string
   telefono: string
   cv_url: string | null
+  avatar_url: string | null
+  anni_esperienza: number | null
 }
 
 interface Azienda {
@@ -163,12 +165,26 @@ export default function AziendaDashboard() {
               {candidati.map(c => (
                 <div key={c.id} className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 hover:border-emerald-300 transition-colors">
                   <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center text-sm font-bold text-emerald-700 shrink-0">
-                      {c.nome?.[0]?.toUpperCase()}{c.cognome?.[0]?.toUpperCase()}
-                    </div>
+                    {c.avatar_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={c.avatar_url}
+                        alt={`${c.nome} ${c.cognome}`}
+                        className="w-10 h-10 rounded-full object-cover border border-slate-200 shrink-0"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center text-sm font-bold text-emerald-700 shrink-0">
+                        {c.nome?.[0]?.toUpperCase()}{c.cognome?.[0]?.toUpperCase()}
+                      </div>
+                    )}
                     <div>
                       <p className="font-semibold text-slate-800 text-sm">{c.nome} {c.cognome}</p>
                       <p className="text-xs text-slate-500">📍 {c.citta}</p>
+                      {c.anni_esperienza != null && (
+                        <p className="text-xs text-slate-400 mt-0.5">
+                          {c.anni_esperienza === 0 ? 'Nessuna esp.' : `${c.anni_esperienza} anni esp.`}
+                        </p>
+                      )}
                     </div>
                   </div>
 
