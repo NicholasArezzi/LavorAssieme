@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -33,13 +33,6 @@ function RegistratiForm() {
   const [nomeAzienda, setNomeAzienda] = useState('')
   const [settore, setSettore] = useState('')
   const [cittaAzienda, setCittaAzienda] = useState('')
-
-  useEffect(() => {
-    if (ruoloParam) {
-      setRuolo(ruoloParam)
-      setStep('form')
-    }
-  }, [ruoloParam])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()

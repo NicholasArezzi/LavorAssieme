@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -32,22 +32,27 @@ export default function AziendaDashboard() {
   const [cercaRuolo, setCercaRuolo] = useState('')
   const [cercaCitta, setCercaCitta] = useState('')
 
-  const loadAzienda = useCallback(async () => {
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { router.push('/login'); return }
+  useEffect(() => {
+    let cancelled = false
+    async function load() {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { router.push('/login'); return }
+      if (cancelled) return
 
-    const { data } = await supabase
-      .from('aziende')
-      .select('*')
-      .eq('user_id', user.id)
-      .single()
+      const { data } = await supabase
+        .from('aziende')
+        .select('*')
+        .eq('user_id', user.id)
+        .single()
 
-    if (data) setAzienda(data)
-    setLoading(false)
+      if (cancelled) return
+      if (data) setAzienda(data)
+      setLoading(false)
+    }
+    load()
+    return () => { cancelled = true }
   }, [router])
-
-  useEffect(() => { loadAzienda() }, [loadAzienda])
 
   async function handleSearch(e: React.FormEvent) {
     e.preventDefault()
