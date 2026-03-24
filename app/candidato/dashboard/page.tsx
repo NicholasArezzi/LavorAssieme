@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -25,6 +25,7 @@ export default function CandidatoDashboard() {
   const [uploading, setUploading] = useState(false)
   const [messaggio, setMessaggio] = useState('')
   const [errore, setErrore] = useState('')
+  const [refreshKey, setRefreshKey] = useState(0)
 
   // Form fields
   const [nome, setNome] = useState('')
@@ -33,30 +34,35 @@ export default function CandidatoDashboard() {
   const [citta, setCitta] = useState('')
   const [ruoloCercato, setRuoloCercato] = useState('')
 
-  const loadData = useCallback(async () => {
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { router.push('/login'); return }
-    setUserId(user.id)
+  useEffect(() => {
+    let cancelled = false
+    async function load() {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { router.push('/login'); return }
+      if (cancelled) return
+      setUserId(user.id)
 
-    const { data } = await supabase
-      .from('candidati')
-      .select('*')
-      .eq('user_id', user.id)
-      .single()
+      const { data } = await supabase
+        .from('candidati')
+        .select('*')
+        .eq('user_id', user.id)
+        .single()
 
-    if (data) {
-      setCandidato(data)
-      setNome(data.nome || '')
-      setCognome(data.cognome || '')
-      setTelefono(data.telefono || '')
-      setCitta(data.citta || '')
-      setRuoloCercato(data.ruolo_cercato || '')
+      if (cancelled) return
+      if (data) {
+        setCandidato(data)
+        setNome(data.nome || '')
+        setCognome(data.cognome || '')
+        setTelefono(data.telefono || '')
+        setCitta(data.citta || '')
+        setRuoloCercato(data.ruolo_cercato || '')
+      }
+      setLoading(false)
     }
-    setLoading(false)
-  }, [router])
-
-  useEffect(() => { loadData() }, [loadData])
+    load()
+    return () => { cancelled = true }
+  }, [router, refreshKey])
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
@@ -74,7 +80,7 @@ export default function CandidatoDashboard() {
       setErrore('Errore nel salvataggio. Riprova.')
     } else {
       setMessaggio('Profilo aggiornato con successo!')
-      loadData()
+      setRefreshKey(k => k + 1)
     }
     setSaving(false)
   }
@@ -121,7 +127,7 @@ export default function CandidatoDashboard() {
       setErrore('CV caricato ma errore nel salvataggio.')
     } else {
       setMessaggio('CV caricato con successo!')
-      loadData()
+      setRefreshKey(k => k + 1)
     }
     setUploading(false)
   }
