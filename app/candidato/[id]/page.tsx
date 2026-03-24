@@ -82,7 +82,7 @@ export default async function CandidatoPublicPage({ params }: Props) {
               <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Città</p>
               <p className="text-slate-800 font-medium">{candidato.citta || '—'}</p>
             </div>
-            {candidato.telefono && (
+            {candidato.telefono && candidato.telefono_visibile && (
               <div className="bg-slate-50 rounded-lg p-4">
                 <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Telefono</p>
                 <a

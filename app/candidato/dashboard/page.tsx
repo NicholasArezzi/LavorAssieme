@@ -17,6 +17,7 @@ interface Candidato {
   bio: string | null
   linkedin: string | null
   anni_esperienza: number | null
+  telefono_visibile: boolean
 }
 
 export default function CandidatoDashboard() {
@@ -41,6 +42,7 @@ export default function CandidatoDashboard() {
   const [bio, setBio] = useState('')
   const [linkedin, setLinkedin] = useState('')
   const [anniEsperienza, setAnniEsperienza] = useState<string>('')
+  const [telefonoVisibile, setTelefonoVisibile] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -68,6 +70,7 @@ export default function CandidatoDashboard() {
         setBio(data.bio || '')
         setLinkedin(data.linkedin || '')
         setAnniEsperienza(data.anni_esperienza != null ? String(data.anni_esperienza) : '')
+        setTelefonoVisibile(data.telefono_visibile ?? false)
       }
       setLoading(false)
     }
@@ -93,6 +96,7 @@ export default function CandidatoDashboard() {
         bio: bio || null,
         linkedin: linkedin || null,
         anni_esperienza: anniEsperienza !== '' ? parseInt(anniEsperienza) : null,
+        telefono_visibile: telefonoVisibile,
       })
       .eq('user_id', userId!)
 
@@ -325,6 +329,18 @@ export default function CandidatoDashboard() {
                   type="tel" value={telefono} onChange={e => setTelefono(e.target.value)}
                   className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
+                <label className="flex items-center gap-2 mt-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={telefonoVisibile}
+                    onChange={e => setTelefonoVisibile(e.target.checked)}
+                    className="w-4 h-4 accent-blue-600"
+                  />
+                  <span className="text-xs text-slate-600">
+                    Rendi visibile il numero alle aziende
+                    <span className="ml-1 text-slate-400">(disattivato = solo il profilo è visibile)</span>
+                  </span>
+                </label>
               </div>
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>

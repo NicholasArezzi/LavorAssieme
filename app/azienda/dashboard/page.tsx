@@ -12,6 +12,7 @@ interface Candidato {
   citta: string
   ruolo_cercato: string
   telefono: string
+  telefono_visibile: boolean
   cv_url: string | null
   avatar_url: string | null
   anni_esperienza: number | null
@@ -212,7 +213,7 @@ export default function AziendaDashboard() {
                         📥 Scarica CV
                       </a>
                     )}
-                    {c.telefono && (
+                    {c.telefono && c.telefono_visibile && (
                       <a
                         href={`tel:${c.telefono}`}
                         className="text-xs font-medium text-blue-700 border border-blue-300 px-3 py-1.5 rounded-lg hover:bg-blue-50 transition-colors"
