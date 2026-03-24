@@ -1,7 +1,5 @@
 'use client'
 
-export const dynamic = 'force-dynamic'
-
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -34,6 +32,9 @@ function RegistratiForm() {
   const [settore, setSettore] = useState('')
   const [cittaAzienda, setCittaAzienda] = useState('')
 
+  // Consenso
+  const [consenso, setConsenso] = useState(false)
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
@@ -50,6 +51,13 @@ function RegistratiForm() {
     if (authError || !authData.user) {
       setErrore(authError?.message || 'Errore durante la registrazione.')
       setLoading(false)
+      return
+    }
+
+    // Se Supabase richiede conferma email, non esiste sessione attiva
+    if (!authData.session) {
+      setLoading(false)
+      setErrore('Controlla la tua email e clicca il link di conferma per completare la registrazione.')
       return
     }
 
@@ -143,7 +151,6 @@ function RegistratiForm() {
   }
 
   const isCandidato = ruolo === 'candidato'
-  const accent = isCandidato ? 'blue' : 'emerald'
 
   return (
     <div className="w-full max-w-md">
@@ -253,7 +260,7 @@ function RegistratiForm() {
             <label className="block text-sm font-medium text-slate-700 mb-1">Email *</label>
             <input
               type="email" required value={email} onChange={e => setEmail(e.target.value)}
-              className={`w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-${accent}-500 focus:border-transparent`}
+              className={`w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:border-transparent ${isCandidato ? 'focus:ring-blue-500' : 'focus:ring-emerald-500'}`}
               placeholder="tu@esempio.it"
             />
           </div>
@@ -261,14 +268,32 @@ function RegistratiForm() {
             <label className="block text-sm font-medium text-slate-700 mb-1">Password *</label>
             <input
               type="password" required minLength={6} value={password} onChange={e => setPassword(e.target.value)}
-              className={`w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-${accent}-500 focus:border-transparent`}
+              className={`w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:border-transparent ${isCandidato ? 'focus:ring-blue-500' : 'focus:ring-emerald-500'}`}
               placeholder="Minimo 6 caratteri"
             />
           </div>
 
+          <div className="flex items-start gap-2 pt-1">
+            <input
+              type="checkbox"
+              id="consenso"
+              required
+              checked={consenso}
+              onChange={e => setConsenso(e.target.checked)}
+              className="mt-0.5 shrink-0 accent-blue-600"
+            />
+            <label htmlFor="consenso" className="text-xs text-slate-600 leading-relaxed">
+              Ho letto e accetto i{' '}
+              <Link href="/termini" target="_blank" className="text-blue-600 hover:underline">Termini e Condizioni</Link>
+              {' '}e la{' '}
+              <Link href="/privacy" target="_blank" className="text-blue-600 hover:underline">Privacy Policy</Link>.
+              Acconsento al trattamento dei miei dati personali per l&apos;erogazione del servizio. *
+            </label>
+          </div>
+
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !consenso}
             className={`w-full font-semibold py-2.5 rounded-lg transition-colors disabled:opacity-60 disabled:cursor-not-allowed text-white ${
               isCandidato ? 'bg-blue-600 hover:bg-blue-700' : 'bg-emerald-600 hover:bg-emerald-700'
             }`}
