@@ -1,7 +1,5 @@
 'use client'
 
-export const dynamic = 'force-dynamic'
-
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -50,6 +48,13 @@ function RegistratiForm() {
     if (authError || !authData.user) {
       setErrore(authError?.message || 'Errore durante la registrazione.')
       setLoading(false)
+      return
+    }
+
+    // Se Supabase richiede conferma email, non esiste sessione attiva
+    if (!authData.session) {
+      setLoading(false)
+      setErrore('Controlla la tua email e clicca il link di conferma per completare la registrazione.')
       return
     }
 
@@ -143,7 +148,6 @@ function RegistratiForm() {
   }
 
   const isCandidato = ruolo === 'candidato'
-  const accent = isCandidato ? 'blue' : 'emerald'
 
   return (
     <div className="w-full max-w-md">
@@ -253,7 +257,7 @@ function RegistratiForm() {
             <label className="block text-sm font-medium text-slate-700 mb-1">Email *</label>
             <input
               type="email" required value={email} onChange={e => setEmail(e.target.value)}
-              className={`w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-${accent}-500 focus:border-transparent`}
+              className={`w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:border-transparent ${isCandidato ? 'focus:ring-blue-500' : 'focus:ring-emerald-500'}`}
               placeholder="tu@esempio.it"
             />
           </div>
@@ -261,7 +265,7 @@ function RegistratiForm() {
             <label className="block text-sm font-medium text-slate-700 mb-1">Password *</label>
             <input
               type="password" required minLength={6} value={password} onChange={e => setPassword(e.target.value)}
-              className={`w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-${accent}-500 focus:border-transparent`}
+              className={`w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:border-transparent ${isCandidato ? 'focus:ring-blue-500' : 'focus:ring-emerald-500'}`}
               placeholder="Minimo 6 caratteri"
             />
           </div>
