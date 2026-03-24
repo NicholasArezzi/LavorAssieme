@@ -112,8 +112,13 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="bg-white border-t border-slate-200 py-6 px-4">
-        <div className="max-w-5xl mx-auto text-center text-slate-500 text-sm">
-          © {new Date().getFullYear()} LavorAssieme – Piattaforma italiana per il lavoro
+        <div className="max-w-5xl mx-auto text-center text-slate-500 text-sm space-y-2">
+          <div>© {new Date().getFullYear()} LavorAssieme – Piattaforma italiana per il lavoro</div>
+          <div className="flex flex-wrap justify-center gap-4">
+            <Link href="/privacy" className="hover:text-blue-600 transition-colors">Privacy Policy</Link>
+            <Link href="/termini" className="hover:text-blue-600 transition-colors">Termini e Condizioni</Link>
+            <Link href="/cookie" className="hover:text-blue-600 transition-colors">Cookie Policy</Link>
+          </div>
         </div>
       </footer>
     </div>

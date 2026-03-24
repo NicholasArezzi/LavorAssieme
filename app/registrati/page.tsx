@@ -32,6 +32,9 @@ function RegistratiForm() {
   const [settore, setSettore] = useState('')
   const [cittaAzienda, setCittaAzienda] = useState('')
 
+  // Consenso
+  const [consenso, setConsenso] = useState(false)
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
@@ -270,9 +273,27 @@ function RegistratiForm() {
             />
           </div>
 
+          <div className="flex items-start gap-2 pt-1">
+            <input
+              type="checkbox"
+              id="consenso"
+              required
+              checked={consenso}
+              onChange={e => setConsenso(e.target.checked)}
+              className="mt-0.5 shrink-0 accent-blue-600"
+            />
+            <label htmlFor="consenso" className="text-xs text-slate-600 leading-relaxed">
+              Ho letto e accetto i{' '}
+              <Link href="/termini" target="_blank" className="text-blue-600 hover:underline">Termini e Condizioni</Link>
+              {' '}e la{' '}
+              <Link href="/privacy" target="_blank" className="text-blue-600 hover:underline">Privacy Policy</Link>.
+              Acconsento al trattamento dei miei dati personali per l&apos;erogazione del servizio. *
+            </label>
+          </div>
+
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !consenso}
             className={`w-full font-semibold py-2.5 rounded-lg transition-colors disabled:opacity-60 disabled:cursor-not-allowed text-white ${
               isCandidato ? 'bg-blue-600 hover:bg-blue-700' : 'bg-emerald-600 hover:bg-emerald-700'
             }`}
